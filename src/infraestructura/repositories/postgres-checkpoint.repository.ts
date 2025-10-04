@@ -20,7 +20,7 @@ export class PostgresCheckpointRepository implements ICheckpointRepository {
 
     const values = [
       id,
-      checkpoint.shipmentId, // Y LA VARIABLE AQUÍ DEBE SER "shipmentId"
+      checkpoint.shipmentId,
       checkpoint.status,
       checkpoint.location,
       timestamp,
