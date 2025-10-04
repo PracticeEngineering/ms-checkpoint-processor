@@ -1,9 +1,6 @@
 import { Injectable, OnModuleInit, Inject } from '@nestjs/common';
 import { PubSub, Subscription, Message } from '@google-cloud/pubsub';
 import { PUBSUB_CLIENT } from '../pubsub/pubsub.module';
-import type { ICheckpointRepository} from '../../application/checkpoint.repository.interface';
-import { CHECKPOINT_REPOSITORY } from '../../application/checkpoint.repository.interface';
-import { Checkpoint } from '../../domain/checkpoint.entity';
 import { SaveCheckpointUseCase } from '../../application/use-cases/save-checkpoint.use-case';
 
 @Injectable()
