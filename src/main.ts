@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  const port = process.env.PORT || 3000;
   app.enableShutdownHooks();
   // No necesitamos que escuche en un puerto HTTP, pero lo dejamos por si se añade un health-check
   await app.listen(3000); 
