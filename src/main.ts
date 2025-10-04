@@ -5,8 +5,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT || 3000;
   app.enableShutdownHooks();
-  // No necesitamos que escuche en un puerto HTTP, pero lo dejamos por si se añade un health-check
-  await app.listen(3000); 
-  console.log('Checkpoint processor service is running and listening for Pub/Sub messages');
+
+  await app.listen(port);
+  console.log(`Checkpoint processor service started on port ${port}, and is now bootstrapping subscribers.`);
 }
 bootstrap();
