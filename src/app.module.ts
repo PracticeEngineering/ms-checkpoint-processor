@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { SaveCheckpointUseCase } from './application/use-cases/save-checkpoint.use-case';
 import { SHIPMENT_REPOSITORY } from './application/ports/ishipment.repository';
-import { PostgresShipmentRepository } from './infraestructure/repositories/postgres.shipment.repository';
-import { PubSubModule } from './infraestructure/pubsub/pubsub.module';
-import { CheckpointSubscriber } from './infraestructure/event-suscription/checkpoint.subscriber.service';
-import { PostgresCheckpointRepository } from './infraestructure/repositories/postgres-checkpoint.repository';
+import { PostgresShipmentRepository } from './infrastructure/repositories/postgres.shipment.repository';
+import { PubSubModule } from './infrastructure/pubsub/pubsub.module';
+import { CheckpointSubscriber } from './infrastructure/event-suscription/checkpoint.subscriber.service';
+import { PostgresCheckpointRepository } from './infrastructure/repositories/postgres-checkpoint.repository';
 import { CHECKPOINT_REPOSITORY } from './application/checkpoint.repository.interface';
-import { DatabaseModule } from './infraestructure/database/database.module';
+import { DatabaseModule } from './infrastructure/database/database.module';
 
 @Module({
   imports: [PubSubModule, DatabaseModule],
