@@ -6,13 +6,14 @@ import { Logger } from 'pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    // Disable Nest's default logger to use our own
-    logger: false,
+    bufferLogs: true,
   });
+
+  const appLogger = app.get<Logger>(LOGGER_PROVIDER_TOKEN);
+  app.useLogger(appLogger);
 
   // Get dependencies for the global filter
   const httpAdapterHost = app.get(HttpAdapterHost);
-  const appLogger = app.get<Logger>(LOGGER_PROVIDER_TOKEN);
 
   // Apply the global filter
   app.useGlobalFilters(new GlobalExceptionLoggerFilter(httpAdapterHost, appLogger));
