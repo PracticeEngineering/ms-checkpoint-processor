@@ -1,18 +1,19 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { SaveCheckpointUseCase } from './application/use-cases/save-checkpoint.use-case';
 import { SHIPMENT_REPOSITORY } from './application/ports/ishipment.repository';
 import { PostgresShipmentRepository } from './infrastructure/repositories/postgres.shipment.repository';
 import { PubSubModule } from './infrastructure/pubsub/pubsub.module';
-import { CheckpointSubscriber } from './infrastructure/event-suscription/checkpoint.subscriber.service';
 import { PostgresCheckpointRepository } from './infrastructure/repositories/postgres-checkpoint.repository';
 import { CHECKPOINT_REPOSITORY } from './application/checkpoint.repository.interface';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { AppController } from './infrastructure/controllers/app.controller';
+import { LoggerModule } from './infrastructure/logger/logger.module';
+import { LoggerMiddleware } from './infrastructure/logger/logger.middleware';
 
 @Module({
-  imports: [PubSubModule, DatabaseModule],
-  controllers: [],
+  imports: [PubSubModule, DatabaseModule, LoggerModule],
+  controllers: [AppController],
   providers: [
-    CheckpointSubscriber, // <-- El servicio que escucha los mensajes
     SaveCheckpointUseCase,
     {
       provide: CHECKPOINT_REPOSITORY, // Cuando se pida esta interfaz...
@@ -24,4 +25,8 @@ import { DatabaseModule } from './infrastructure/database/database.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
