@@ -1,13 +1,13 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
-import { Pool } from 'pg';
-import { ICheckpointRepository } from '../../application/ports/checkpoint.repository';
-import { Checkpoint } from '../../domain/checkpoint.entity';
+import type { Pool, PoolClient  } from 'pg';
 import { DB_CONNECTION } from '../database/database.provider';
+import { ICheckpointRepository } from '../../application/ports/icheckpoint.repository';
+import { Checkpoint } from '../../domain/checkpoint.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { LOGGER_PROVIDER_TOKEN } from '../logger/logger.constants';
 import type { Logger } from 'pino';
@@ -17,7 +17,7 @@ export class PostgresCheckpointRepository implements ICheckpointRepository {
   private readonly context = PostgresCheckpointRepository.name;
 
   constructor(
-    @Inject(DB_CONNECTION) private readonly pool: Pool,
+    @Inject(DB_CONNECTION) private readonly db: Pool | PoolClient,
     @Inject(LOGGER_PROVIDER_TOKEN) private readonly logger: Logger,
   ) {}
 
@@ -39,7 +39,7 @@ export class PostgresCheckpointRepository implements ICheckpointRepository {
     ];
 
     try {
-      await this.pool.query(query, values);
+      await this.db.query(query, values);
       this.logger.info(
         { checkpointId: id, shipmentId: checkpoint.shipmentId },
         `[${this.context}] Checkpoint saved successfully.`,

@@ -1,68 +1,50 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IShipmentRepository } from '../ports/ishipment.repository';
-import { SHIPMENT_REPOSITORY } from '../ports/ishipment.repository';
-import type { ICheckpointRepository } from '../ports/checkpoint.repository';
-import { CHECKPOINT_REPOSITORY } from '../ports/checkpoint.repository';
 import { Checkpoint } from '../../domain/checkpoint.entity';
 import { LOGGER_PROVIDER_TOKEN } from '../../infrastructure/logger/logger.constants';
 import type { Logger } from 'pino';
+import { TRANSACTION } from '../ports/itransaction';
+import type { Itransaction } from '../ports/itransaction';
 
 @Injectable()
 export class SaveCheckpointUseCase {
   private readonly context = SaveCheckpointUseCase.name;
 
   constructor(
-    @Inject(SHIPMENT_REPOSITORY)
-    private readonly shipmentRepository: IShipmentRepository,
-    @Inject(CHECKPOINT_REPOSITORY)
-    private readonly checkpointRepository: ICheckpointRepository,
+    @Inject(TRANSACTION) private readonly transaction: Itransaction,
     @Inject(LOGGER_PROVIDER_TOKEN) private readonly logger: Logger,
   ) {}
 
   async execute(data: { trackingId: string; status: string; location?: string }): Promise<void> {
     this.logger.info({ data }, `[${this.context}] Attempting to save checkpoint...`);
 
-    try {
+    // El caso de uso solo describe QUÉ hacer, y delega el CÓMO de la transacción a la Unit of Work.
+    return this.transaction.execute(async(repos) => {
       // 1. Buscar el shipment usando el trackingId del mensaje
-      const shipment = await this.shipmentRepository.findByTrackingId(
-        data.trackingId,
-      );
+      const shipment = await repos.shipmentRepository.findByTrackingId(data.trackingId);
+      
       if (!shipment) {
-        this.logger.warn(
-          { trackingId: data.trackingId },
-          `[${this.context}] Shipment not found. The message will be discarded.`,
-        );
+        this.logger.warn({ trackingId: data.trackingId }, `[${this.context}] Shipment not found. Work will not be committed.`);
         // TODO: Implement DLQ publishing. Send message to 'projects/sistema-tracking-474120/topics/DLQ'.
         return;
       }
 
-      this.logger.info(
-        { trackingId: data.trackingId, shipmentId: shipment.id },
-        `[${this.context}] Shipment found. Saving checkpoint.`,
-      );
-
-      // 2. Crear el objeto de dominio Checkpoint con el shipmentId correcto
+      this.logger.info({ trackingId: data.trackingId, shipmentId: shipment.id }, `[${this.context}] Shipment found. Preparing to save checkpoint and update status.`);
+      // 2. Crear el objeto de dominio Checkpoint
+      // TODO: Refactorizar la creación de la entidad Checkpoint.
       const newCheckpoint = new Checkpoint();
       newCheckpoint.status = data.status;
       newCheckpoint.location = data.location;
 
-      // 3. Guardar el checkpoint usando el repositorio
-      await this.checkpointRepository.save({
+      // 3. Guardar el checkpoint (usando el repositorio transaccional)
+      await repos.checkpointRepository.save({
         ...newCheckpoint,
-        shipmentId: shipment.id, // <-- Pasamos el ID (UUID) del shipment encontrado
+        shipmentId: shipment.id,
       });
 
-      this.logger.info(
-        { trackingId: data.trackingId, status: data.status },
-        `[${this.context}] Checkpoint saved successfully.`,
-      );
-    } catch (error) {
-      this.logger.error(
-        { err: error, trackingId: data.trackingId },
-        `[${this.context}] An unexpected error occurred while saving checkpoint.`,
-      );
-      // Re-lanzamos el error para que el orquestador del evento (ej. NATS/Kafka) decida qué hacer.
-      throw error;
-    }
+      // 4. Actualizar el estado del shipment (usando el repositorio transaccional)
+      await repos.shipmentRepository.updateStatus(shipment.id, data.status);
+
+      this.logger.info({ trackingId: data.trackingId, status: data.status }, `[${this.context}] Transaction work completed successfully.`);
+    })
   }
 }
