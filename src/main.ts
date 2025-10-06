@@ -10,7 +10,7 @@ async function bootstrap() {
   });
 
   const appLogger = app.get<Logger>(LOGGER_PROVIDER_TOKEN);
-  app.useLogger(appLogger);
+  app.useLogger(appLogger as any);
 
   // Get dependencies for the global filter
   const httpAdapterHost = app.get(HttpAdapterHost);
