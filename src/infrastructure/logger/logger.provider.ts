@@ -17,6 +17,11 @@ export const loggerProvider = {
             }
           : undefined,
     });
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    logger.log = logger.info.bind(logger);
+
     return logger;
   },
 };
