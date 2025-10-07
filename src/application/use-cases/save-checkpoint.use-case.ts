@@ -30,10 +30,11 @@ export class SaveCheckpointUseCase {
 
       this.logger.info({ trackingId: data.trackingId, shipmentId: shipment.id }, `[${this.context}] Shipment found. Preparing to save checkpoint and update status.`);
       // 2. Crear el objeto de dominio Checkpoint
-      // TODO: Refactorizar la creación de la entidad Checkpoint.
-      const newCheckpoint = new Checkpoint();
-      newCheckpoint.status = data.status;
-      newCheckpoint.location = data.location;
+      const newCheckpoint = new Checkpoint({
+        trackingId: data.trackingId,
+        status: data.status,
+        location: data.location,
+      });
 
       // 3. Guardar el checkpoint (usando el repositorio transaccional)
       await repos.checkpointRepository.save({
